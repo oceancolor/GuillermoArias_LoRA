@@ -11,7 +11,8 @@
 #   SD_SCRIPTS, TRAIN_SCRIPT, BASE_MODEL, VENV_PY, LOCAL_ROOT, DATASET_CONFIG,
 #   VAL_PROMPTS, OUTPUT_DIR, LOG_DIR, CACHE_DIR, RUN_TAG, NAME, STEPS, BATCH,
 #   LR, DIM, ALPHA, SEED, SAVE_EVERY, SAVE_STATE, RESUME, BENCH, SAMPLE,
-#   MIN_FREE_MIB, WARN_FREE_MIB, FORCE, DRY_RUN, DISABLE_MMAP, LOWRAM, FULL_BF16
+#   MIN_FREE_MIB, WARN_FREE_MIB, FORCE, DRY_RUN, DISABLE_MMAP, LOWRAM, FULL_BF16,
+#   NO_HALF_VAE, DL_WORKERS, MAX_GRAD_NORM, CUDA_ALLOC_CONF
 #
 # IMPORTANT before running: close ComfyUI and every other GPU-holding GUI app.
 # For unattended long runs also: pause Windows Update, disable sleep/hibernate,
@@ -56,6 +57,20 @@ SAVE_STATE="${SAVE_STATE:-0}"
 RESUME="${RESUME:-}"
 MIN_FREE_MIB="${MIN_FREE_MIB:-6400}"
 WARN_FREE_MIB="${WARN_FREE_MIB:-7000}"
+# sd-scripts warns that a non-zero max_grad_norm enables clip_grad_norm, which
+# allocates an extra all-gradient-norm workspace. On an 8 GB WDDM card the very
+# first optimizer.step() can OOM there even with >6 GiB reported free.
+MAX_GRAD_NORM="${MAX_GRAD_NORM:-1.0}"
+# Windows uses spawn for DataLoader workers: each worker re-imports torch and
+# duplicates the parent's address space. On a 16 GB / 34.77 GB commit-limit host
+# that is enough to push the first CUDA allocation over the edge. 0 is the
+# safest setting (and latent/TE caches are already on disk, so workers add
+# almost nothing); raise it only on hosts with more RAM.
+DL_WORKERS="${DL_WORKERS:-0}"
+# SDXL's fp16 VAE is NaN-prone, but under --full_bf16 the VAE dtype becomes
+# bf16, which has fp32's exponent range and does not need --no_half_vae.
+# Leaving the flag OFF avoids an extra fp32 VAE copy on the CPU.
+NO_HALF_VAE="${NO_HALF_VAE:-0}"
 
 mkdir -p "$OUTPUT_DIR" "$LOG_DIR" "$CACHE_DIR"
 
@@ -107,7 +122,12 @@ export TEMP="$CACHE_DIR/tmp"
 export TMP="$CACHE_DIR/tmp"
 export PIP_CACHE_DIR="$CACHE_DIR/pip"
 # expandable_segments is not supported on Windows (torch warns and ignores it).
-# Keep the CUDA allocator at its defaults on this host.
+# max_split_size_mb IS supported and reduces allocator fragmentation on 8 GB
+# WDDM hosts; opt in with CUDA_ALLOC_CONF=max_split_size_mb:128.
+if [[ -n "${CUDA_ALLOC_CONF:-}" ]]; then
+  export PYTORCH_CUDA_ALLOC_CONF="$CUDA_ALLOC_CONF"
+  echo "[alloc] PYTORCH_CUDA_ALLOC_CONF=$CUDA_ALLOC_CONF"
+fi
 mkdir -p "$HF_HOME" "$TEMP"
 
 # ---- 4. Launcher ----
@@ -154,7 +174,7 @@ ARGS=(
   --lr_warmup_steps=100
   --optimizer_type=adafactor
   --optimizer_args "scale_parameter=False" "relative_step=False" "warmup_init=False"
-  --max_grad_norm=1.0
+  --max_grad_norm="$MAX_GRAD_NORM"
 
   --mixed_precision=bf16
   --save_precision=bf16
@@ -171,10 +191,15 @@ ARGS=(
   --cache_text_encoder_outputs_to_disk
   --gradient_checkpointing
   --sdpa
-  --no_half_vae
-  --max_data_loader_n_workers=2
-  --persistent_data_loader_workers
+  --max_data_loader_n_workers="$DL_WORKERS"
 )
+if (( DL_WORKERS > 0 )); then
+  ARGS+=(--persistent_data_loader_workers)
+fi
+# Only needed for fp16 training; under full_bf16 the VAE is bf16 already.
+if [[ "$NO_HALF_VAE" == "1" ]]; then
+  ARGS+=(--no_half_vae)
+fi
 
 # --disable_mmap_load_safetensors is NOT a free workaround on a 16 GB host.
 # In sd-scripts it switches to safetensors.torch.load(open(path,"rb").read()),
@@ -205,9 +230,11 @@ fi
 #   RuntimeError: DefaultCPUAllocator: not enough memory:
 #   you tried to allocate 6553600 bytes.
 # With --full_bf16 the U-Net is loaded in bf16 directly, so no conversion copy
-# is made. Requires --mixed_precision=bf16 (already set) and --no_half_vae
-# (already set). Trade-off: LoRA weights stay bf16, slightly less numerically
-# stable than fp32 master weights; acceptable for a style LoRA pilot.
+# is made. The only hard requirement is --mixed_precision=bf16 (already set).
+# NOTE: the earlier note claiming --no_half_vae was also required was wrong;
+# source (sdxl_train_util.match_mixed_precision) asserts only the precision.
+# Under full_bf16 the VAE dtype is bf16, so the fp32 VAE flag is unnecessary
+# and is now opt-in via NO_HALF_VAE=1.
 if [[ "${FULL_BF16:-0}" == "1" ]]; then
   ARGS+=(--full_bf16)
 fi

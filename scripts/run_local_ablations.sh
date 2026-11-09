@@ -7,6 +7,10 @@
 #   S_IT=2.0 DRY_RUN=1 bash scripts/run_local_ablations.sh     # preview plan
 #   S_IT=2.0 bash scripts/run_local_ablations.sh               # run the window
 #
+# 2026-11-10: the 768-bucket benchmark completed at 0.73 s/it (report
+# appendix C). Do NOT feed that number into S_IT for the real 1024 run -
+# rerun BENCH=1 with configs/dataset_local_bench.toml (1024) first.
+#
 # Overridable env vars:
 #   S_IT (required), PLAN (auto|full|trim|light|minimal), MAX_HOURS, DRY_RUN,
 #   FORCE_REDO, INTERVAL, SAVE_STATE, LOCAL_ROOT, DONE_DIR, LOG_DIR,

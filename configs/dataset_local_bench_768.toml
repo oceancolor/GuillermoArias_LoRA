@@ -1,0 +1,21 @@
+# SYNTHETIC benchmark dataset - DO NOT USE FOR REAL TRAINING
+# 768px variant: isolates whether the 8 GB card / 16 GB commit limit can enter
+# a training step at all. The 1024px variant OOMs while the VAE encodes on GPU.
+# This is a DIAGNOSTIC config, not a quality target for the real style LoRA.
+[general]
+shuffle_caption = false
+caption_extension = ".txt"
+keep_tokens = 1
+
+[[datasets]]
+resolution = 768
+batch_size = 1
+enable_bucket = true
+min_bucket_reso = 640
+max_bucket_reso = 1024
+bucket_reso_steps = 32
+bucket_no_upscale = true
+
+  [[datasets.subsets]]
+  image_dir = "E:/lora_local/bench/10_mdtr"
+  num_repeats = 4

@@ -12,6 +12,8 @@
 > **v1.1 变更**：用户确认采用分支 A。分支 B / C / D 全部排除；§2 从"决策门"改为分支 A 的可执行采集与准入规范；新增 `configs/sources.csv`、`configs/caption_rules_branchA.md`、`scripts/init_dataset.py`、`scripts/audit_manifest.py` 四件 S0 交付物。触发词 `mdtr_style`、训练框架、H20 配置与评估方案均不变。
 >
 > **补充（2026-11-08，v1.1 修订）**：新增《`本机训练评估与成本.md`》——实测本机为 RTX 5060 Ti 8GB / 16GB 内存。用户确认可提供 **>10 小时独占窗口**后机会成本归零，结论升级为：**本机承担全部 SDXL 训练与消融，H20 只保留 dim64 高容量正式版与 FLUX.1-dev 对照**（H20 配额从 30–40 降至约 4–6 GPU·h）。8GB 的 6 项显存妥协、FLUX 本机不可行、无人值守长跑风险三项**不随时间改变**。新增 `scripts/run_local_ablations.sh`（10h 排期 / 按实测 s/it 自动裁剪 / 组级断点续跑 / GPU 监控）与 `configs/dataset_local_single_palette.toml`（G4 可选消融）。本文 §5–§6 的 H20 参数**不适用于本机**，切勿照抄。
+>
+> **补充（2026-11-10，v1.2）**：① 本机 SDXL LoRA **200 步 benchmark 已完整跑通**（`EXIT=0`、checkpoint 有效），768 桶实测 **0.73 s/it**；三项修复见《`本机训练评估与成本.md`》附录 C。**S0 仍是正式训练唯一硬门**，Phase 0 状态不变。② 上一行「FLUX 本机不可行」已更正：该判断只对「FLUX.1-dev 12B + sd-scripts」成立，本机另有可行的「FLUX.2 klein 4B Base + ai-toolkit」路径 D，详见《`FLUX_LoRA训练方案.md`》v1.1 §1.1（用户已明确**先不跑路径 D**）。③ 新增交付物 `scripts/patch_sdxl_lowmem.py`、`configs/dataset_local_bench_768.toml`。
 
 ---
 
@@ -500,14 +502,16 @@ LoRA 只训练低秩适配器，优化器状态与激活都很小。在 96 GB �
 | `scripts/train_flux.sh` | FLUX.1-dev 训练命令 | S4 |
 | `scripts/eval_checkpoints.py` | checkpoint 定量评估：色彩贴合、纹理、泄漏率 | S5 |
 | `configs/val_prompts.txt` | 固定验证 prompt 集 | S2–S5 |
-| **`本机训练评估与成本.md`**（v1.1） | 本机实测环境、10h 窗口排期、时间/电费/磁盘/环境成本、决策矩阵与长跑风险 | 全程 |
+| **`本机训练评估与成本.md`**（v1.2） | 本机实测环境、10h 窗口排期、时间/电费/磁盘/环境成本、决策矩阵、附录 B/C 排错与 200 步实测 | 全程 |
 | **`configs/dataset_local_sdxl.toml`** | 本机 8GB 数据集配置（batch1 / repeat4 / bucket32 / max1280） | 本机 S1–S5 |
 | **`configs/dataset_local_single_palette.toml`** | G4 单配色支消融配置（可选，需自备 `10_mdtr_single` 子集） | 本机 S5 |
 | **`scripts/train_local_sdxl.sh`** | 本机单组启动脚本（显存预检、缓存重定向 E 盘、Adafactor、断点续跑、dry-run） | 本机 S1–S5 |
 | **`scripts/run_local_ablations.sh`** | 10h+ 无人值守排期：按实测 s/it 自动选档、组级断点续跑、GPU 温度/显存监控 | 本机 S1–S5 |
 | **`scripts/setup_local_env.sh`** | 本机环境一键搭建（独立 venv + `.pth` 复用 torch + sd-scripts + 依赖 + 两个 CLIP tokenizer 预缓存 + 自检） | 本机 S1 |
 | **`scripts/make_bench_dataset.py`** | 合成 1024² 基准图集生成器，让 S0 之前就能实测 `s/it` | 本机 S1 |
-| **`configs/dataset_local_bench.toml`** | benchmark 专用数据集配置（指向合成图，**禁止用于正式训练**） | 本机 S1 |
+| **`configs/dataset_local_bench.toml`** | benchmark 专用数据集配置（1024 口径，指向合成图，**禁止用于正式训练**） | 本机 S1 |
+| **`configs/dataset_local_bench_768.toml`** | 768 桶 benchmark 配置（2026-11-10 实测 0.73 s/it 所用；同样禁止正式训练） | 本机 S1 |
+| **`scripts/patch_sdxl_lowmem.py`** | sd-scripts 低内存补丁（幂等 / 可回滚）：TE bf16 加载、缓存齐全时跳过 TE GPU 往返 | 本机 S1 |
 | **`FLUX_LoRA训练方案.md`** | FLUX 补充方案：三条路径评估、非 gated 模型获取、8GB 探测配方、合规叠加 | S4 / 全程 |
 | **`scripts/split_flux_checkpoint.py`** | 一体化 FLUX checkpoint → 纯 DiT + AE（流式、峰值 8MB、含自检；键名 780/780 与 244/244 已校验） | S4 |
 | **`scripts/fetch_flux_models.sh`** | 非 gated 三件套下载（约 22.4 GB、断点续传）+ 自动拆分 | S4 |
