@@ -1,0 +1,90 @@
+# FLUX.2 [klein] 4B Base LoRA —— 本机 RTX 5060 Ti 8GB 专用配置
+#
+# 依据：ai-toolkit 官方 klein 4B 文档 + 已公开的 Windows 8GB 成功案例
+#       （RTX 4070 Laptop 8GB / 3000 步约 4 小时 / 5.1–5.7 s/it / 专用显存约 6GB）。
+# 适用对象：分支 A 风格谱系（地中海 / 海边阅读 / 厚涂肌理）。
+#
+# ⚠️ 状态：配置层面已核对，**尚未在本机实测**。前置条件见 FLUX_LoRA训练方案.md §1.1。
+# ⚠️ 本配置与 sd-scripts 的 FLUX.1-dev 路径完全无关，不要混用参数。
+#
+# 三个「反直觉但决定成败」的设置（改动前先读文档 §1.1）：
+#   1. low_vram: false        —— true 会把 transformer 停在 CPU 内存并每步走 PCIe，
+#                                实测 266 s/it（3000 步约 9 天）；false 约 5 s/it。
+#   2. cache_text_embeddings: true —— 启动时编码一次 caption 后卸载 Qwen3-4B，
+#                                否则 Windows WDDM 静默 spill 到共享显存、慢 10–50 倍且不报错。
+#   3. sample.prompts 里写死 mdtr_style —— 开启文本嵌入缓存后 [trigger] 占位符不会被替换。
+#
+# 运行：
+#   cd E:/lora_local/ai-toolkit
+#   HF_ENDPOINT=https://hf-mirror.com venv/Scripts/python.exe run.py \
+#     "C:/Users/Administrator/WorkBuddy/LoRA训练/configs/ai_toolkit_klein_4b_local.yaml"
+
+job: extension
+config:
+  name: "mdtr_style_klein4b_local_v1"
+  process:
+    - type: "sd_trainer"
+      training_folder: "E:/lora_local/output/klein4b"
+      device: "cuda:0"
+
+      # Klein 只支持 linear LoRA（官方 UI 中 conv 为 disabled）
+      network:
+        type: "lora"
+        linear: 16
+        linear_alpha: 16
+
+      save:
+        dtype: "float16"
+        save_every: 250
+        max_step_saves_to_keep: 6
+
+      datasets:
+        - folder_path: "C:/Users/Administrator/WorkBuddy/LoRA训练/dataset/train/10_mdtr"
+          caption_ext: "txt"
+          caption_dropout_rate: 0.0   # cache_text_embeddings 开启后 dropout 本就失效
+          cache_latents_to_disk: true
+          resolution: [768]           # 单桶更省显存；S0 数据到位后可加 1024
+
+      train:
+        batch_size: 1
+        steps: 2000                 # 约 2.8–3.2 小时（按 5.1–5.7 s/it 外推）
+        gradient_accumulation_steps: 1
+        gradient_checkpointing: true
+        noise_scheduler: "flowmatch"
+        timestep_type: "weighted"   # klein 推荐值，勿沿用 FLUX.1 的 flux_shift
+        optimizer: "adamw8bit"
+        lr: 1e-4
+        dtype: "bf16"
+        cache_text_embeddings: true  # 8GB 的 make-or-break
+        skip_first_sample: true
+        ema_config:
+          use_ema: true
+          ema_decay: 0.99
+
+      model:
+        # 必须是未蒸馏的 base 4B；本机已有的 NVFP4 是 distilled 推理量化，不能训练
+        name_or_path: "E:/lora_local/models/klein4b"
+        arch: "flux2_klein_4b"      # 缺这行会回退到 SD loader 并报错
+        quantize: true              # fp8 后 transformer 约 4GB，整机塞得进 8GB
+        quantize_te: true
+        qtype: "qfloat8"
+        low_vram: false             # 见文件头说明，勿改成 true
+
+      sample:
+        sampler: "flowmatch"
+        sample_every: 250
+        width: 768
+        height: 768
+        guidance_scale: 4           # base 未蒸馏，用真实 CFG
+        sample_steps: 28            # 不是 4 步 turbo
+        seed: 42
+        walk_seed: false            # 固定 seed，checkpoint 才能 1:1 盲评
+        prompts:
+          # 触发词必须字面写出，不要用 [trigger]
+          - "mdtr_style, a woman reading a book on a seaside terrace, striped chair, potted plant, white wall, strong sunlight from the left"
+          - "mdtr_style, a woman watering plants in a courtyard, dappled tree shadows, quiet afternoon"
+          - "mdtr_style, a small table with a cup and an open book beside a window, linen curtain, midday light"
+          - "mdtr_style, two chairs on a stone balcony overlooking the sea, potted geraniums, clear sky"
+
+# 说明：不设 trigger_word。分支 A 的 caption 规范要求 mdtr_style 已固定写在每条
+# caption 首位，若再设 trigger_word 会二次注入（与 8GB 案例里的坑 3 同源）。
