@@ -1,0 +1,9 @@
+﻿id,source_url,platform,claimed_attribution,collected_at,reverse_image_checked,earliest_source,license_status,palette_branch,subject_bucket,ai_suspicion,decision,local_file,notes
+EXAMPLE-001,https://example.invalid/article/001,微信公众号,Guillermo Arias,2026-11-06,yes,https://example.invalid/original/001,unknown,retro_muted,person_outdoor,none,keep,dataset/raw/EXAMPLE-001.jpg,"模板示例行：反搜命中原创页，页面署名原样抄录，不代表已确权"
+EXAMPLE-002,https://example.invalid/board/002,Pinterest,,2026-11-06,yes,https://example.invalid/original/002,unknown,candy_bright,person_outdoor,low,keep,dataset/raw/EXAMPLE-002.png,"模板示例行：署名留空表示页面无署名；low 嫌疑仍需人眼复核"
+EXAMPLE-003,https://example.invalid/article/003,微博,吉列尔莫·阿里亚斯,2026-11-06,yes,未找到,unknown,retro_muted,person_indoor,none,review,dataset/raw/EXAMPLE-003.jpg,"模板示例行：反搜未命中，计入不可溯源率"
+EXAMPLE-004,https://example.invalid/board/004,小红书,,2026-11-06,no,,unknown,candy_bright,landscape,medium,review,dataset/raw/EXAMPLE-004.webp,"模板示例行：未反搜且 AI 嫌疑中等，补做溯源后再定去留"
+EXAMPLE-005,https://example.invalid/post/005,头条,Guillermo Arias,2026-11-06,yes,https://example.invalid/original/005,unknown,retro_muted,still_life,high,drop,dataset/raw/EXAMPLE-005.jpg,"模板示例行：手指与织物笔触逻辑不连贯，高嫌疑必须 drop"
+EXAMPLE-006,https://example.invalid/post/006,百家号,Guillermo Arias,2026-11-06,no,,unknown,undecided,ood_anchor,none,keep,dataset/raw/EXAMPLE-006.jpg,"模板示例行：配色支 undecided 会被 S0 门禁拦下，须先定性"
+EXAMPLE-007,https://example.invalid/board/007,Pinterest,,2026-11-06,yes,https://example.invalid/original/007,unknown,candy_bright,still_life,none,keep,dataset/raw/EXAMPLE-007.png,"模板示例行：长边不足 1024 或带水印时改 drop"
+EXAMPLE-008,https://example.invalid/article/008,公众号,Guillermo Arias,2026-11-06,yes,https://example.invalid/original/008,unknown,retro_muted,landscape,none,drop,dataset/raw/EXAMPLE-008.jpg,"模板示例行：九宫格转载截图，硬门槛不通过"

@@ -1,0 +1,26 @@
+# WorkBuddy 本地工作记忆 / 会话日志（项目数据，仅本地保留，不入库）
+.workbuddy/
+
+# Python 字节码
+__pycache__/
+*.py[cod]
+
+# 训练产物：数据集、权重、缓存、日志
+# 合规要求：分支 A 归属未确证 -> 不发布数据集、不发布权重
+dataset/
+output/
+bench/
+cache/
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.bin
+*.npz
+*.log
+
+# 本地虚拟环境与系统文件
+venv/
+.venv/
+Thumbs.db
+.DS_Store

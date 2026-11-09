@@ -1,0 +1,33 @@
+# kohya_ss / sd-scripts - G4 ablation: single-palette branch only
+# LOCAL host (RTX 5060 Ti 8 GB). Same VRAM settings as dataset_local_sdxl.toml;
+# the ONLY difference is image_dir, which points at the retro_muted subset.
+#
+# This config is OPTIONAL. run_local_ablations.sh enables G4 automatically when
+# BOTH conditions hold:
+#   1. this file exists, and
+#   2. dataset/train/10_mdtr_single/ contains images with matching .txt captions.
+# Otherwise G4 is skipped with a warning (no crash, other groups still run).
+#
+# How to build the subset (do this after S0 gate passes):
+#   filter configs/sources.csv for palette_branch == retro_muted, then copy each
+#   <id>.png and <id>.txt from dataset/train/10_mdtr/ into 10_mdtr_single/.
+#   Keep captions EXACTLY as-is, including the retro_muted sublabel, so the only
+#   variable between G2 and G4 is the composition of the training corpus.
+
+[general]
+shuffle_caption = false
+caption_extension = ".txt"
+keep_tokens = 1          # protects the leading trigger token mdtr_style
+
+[[datasets]]
+resolution = 1024
+batch_size = 1
+enable_bucket = true
+min_bucket_reso = 768
+max_bucket_reso = 1280
+bucket_reso_steps = 32
+bucket_no_upscale = true
+
+  [[datasets.subsets]]
+  image_dir = "dataset/train/10_mdtr_single"
+  num_repeats = 4

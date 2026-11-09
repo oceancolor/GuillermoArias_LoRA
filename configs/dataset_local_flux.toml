@@ -1,0 +1,22 @@
+# kohya_ss / sd-scripts — FLUX.1-dev LoRA 数据集配置（本机 RTX 5060 Ti 8GB）
+# 与分支 A 的 SDXL 训练共用同一份图片与 caption；仅分辨率 / batch / repeat 不同。
+# 正式训练前必须把 image_dir 换成真实数据集（S0 门禁通过后才存在）。
+# 合成 benchmark 图集绝对不能用于正式训练，见 dataset_local_bench.toml 的警告。
+
+[general]
+shuffle_caption = false
+caption_extension = ".txt"
+keep_tokens = 1              # 锁住首位触发词 mdtr_style
+
+[[datasets]]
+resolution = 768             # 8GB 卡起点：1024 会让激活显存翻近一倍；跑通后再试 896
+batch_size = 1
+enable_bucket = true
+min_bucket_reso = 640
+max_bucket_reso = 1024
+bucket_reso_steps = 64       # FLUX 的 patchify 要求边长能被 64 整除
+bucket_no_upscale = true
+
+  [[datasets.subsets]]
+  image_dir = "dataset/train/10_mdtr"
+  num_repeats = 4

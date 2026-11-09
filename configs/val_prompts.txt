@@ -1,0 +1,21 @@
+# 固定验证 prompt 集 —— 训练采样与 checkpoint 评估共用
+# 规则：同一 seed、同一采样器、同一 CFG、同一分辨率；每次评估不得改动本文件。
+# kohya --sample_prompts 支持每行一个 prompt，也可在行首追加 --w/--h/--d/--l/--s 选项。
+
+# --- 域内：应高度贴合风格 ---
+mdtr_style, a woman reading a book on a seaside terrace, striped chair, potted plant, white wall, strong sunlight
+mdtr_style retro_muted, a woman reading a book on a seaside terrace, striped chair, potted plant, white wall, strong sunlight
+mdtr_style candy_bright, a woman reading a book on a seaside terrace, striped chair, potted plant, white wall, strong sunlight
+mdtr_style, a vase of flowers on a wooden table, scattered fruit, window light, simple background
+mdtr_style, a woman watering plants in a courtyard, dappled tree shadows, quiet afternoon
+
+# --- 域外：测内容泄漏与风格泛化（最关键） ---
+mdtr_style, a night market in Tokyo, lanterns, crowd, wet pavement
+mdtr_style, a snowy mountain cabin at dawn, pine trees, pale sky
+mdtr_style, a red bicycle leaning against a white wall, midday sun
+mdtr_style, a cat sleeping on a windowsill, half-open shutters
+mdtr_style, a porcelain cup and a book on a desk, top-down view
+
+# --- 无触发词：测风格泄漏率，理想情况下应接近底模原貌 ---
+a night market in Tokyo, lanterns, crowd, wet pavement
+a vase of flowers on a wooden table, window light

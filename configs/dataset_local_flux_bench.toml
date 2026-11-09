@@ -1,0 +1,22 @@
+# FLUX 8GB s/it 探测专用：合成图集，绝对不能用于正式训练
+# 生成方式：python scripts/make_bench_dataset.py（输出 E:/lora_local/bench/10_mdtr）
+# 图集不含任何风格信号，只用于测量单步耗时与显存峰值。
+# SYNTHETIC benchmark dataset - DO NOT USE FOR REAL TRAINING
+
+[general]
+shuffle_caption = false
+caption_extension = ".txt"
+keep_tokens = 1
+
+[[datasets]]
+resolution = 768
+batch_size = 1
+enable_bucket = true
+min_bucket_reso = 640
+max_bucket_reso = 1024
+bucket_reso_steps = 64
+bucket_no_upscale = true
+
+  [[datasets.subsets]]
+  image_dir = "E:/lora_local/bench/10_mdtr"
+  num_repeats = 4

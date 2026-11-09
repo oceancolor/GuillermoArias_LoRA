@@ -1,0 +1,20 @@
+# kohya_ss / sd-scripts — FLUX.1-dev 风格 LoRA 数据集配置
+# 与 SDXL 共用同一份图片与 caption，仅 batch_size / repeat 不同。
+
+[general]
+shuffle_caption = false
+caption_extension = ".txt"
+keep_tokens = 1
+
+[[datasets]]
+resolution = 1024
+batch_size = 2           # FLUX 12B 激活更大；H20 96GB 仍无需量化或 offload
+enable_bucket = true
+min_bucket_reso = 768
+max_bucket_reso = 1536
+bucket_reso_steps = 64
+bucket_no_upscale = true
+
+  [[datasets.subsets]]
+  image_dir = "dataset/train/10_mdtr"
+  num_repeats = 8

@@ -1,0 +1,29 @@
+# kohya_ss / sd-scripts — SDXL 风格 LoRA 数据集配置
+# 运行目录：项目根目录（LoRA训练/）
+# 触发词固定首位，绝不启用 shuffle_caption。
+
+[general]
+shuffle_caption = false
+caption_extension = ".txt"
+keep_tokens = 1          # 若日后开启 shuffle_caption，此行保证触发词 mdtr_style 不被打乱
+
+[[datasets]]
+resolution = 1024
+batch_size = 6           # H20 96GB 显存充裕；命令行 --train_batch_size 可覆盖
+enable_bucket = true
+min_bucket_reso = 768
+max_bucket_reso = 1536
+bucket_reso_steps = 64
+bucket_no_upscale = true # 不放大小图，避免插值破坏笔触纹理
+
+  [[datasets.subsets]]
+  image_dir = "dataset/train/10_mdtr"
+  num_repeats = 10
+  # caption 例：mdtr_style retro_muted, a woman reading on a seaside terrace, ...
+
+  # 可选：正则化图像（消融项）。不启用时把下面整段注释掉。
+  # 注意：正则图 caption 必须【去掉触发词与配色子标签】。
+  # [[datasets.subsets]]
+  # image_dir = "dataset/train/1_reg"
+  # num_repeats = 1
+  # is_reg = true

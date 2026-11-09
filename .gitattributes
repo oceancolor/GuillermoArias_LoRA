@@ -1,0 +1,17 @@
+# Shell 脚本会在 Linux/H20 上直接执行，必须保持 LF
+# （Windows 默认 core.autocrlf=true 会把它们转成 CRLF）
+*.sh text eol=lf
+
+# 其余文本文件统一 LF，避免跨平台 diff 噪声
+*.py text eol=lf
+*.toml text eol=lf
+*.md text eol=lf
+*.csv text eol=lf
+*.txt text eol=lf
+
+# 二进制 / 模型产物（本仓库不收录，仅防御性声明）
+*.safetensors binary
+*.ckpt binary
+*.pt binary
+*.png binary
+*.jpg binary

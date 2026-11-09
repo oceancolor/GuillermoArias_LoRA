@@ -1,0 +1,31 @@
+# kohya_ss / sd-scripts - SDXL style LoRA on the LOCAL host (RTX 5060 Ti 8 GB)
+# Differences from configs/dataset_sdxl.toml (H20 96 GB) are all VRAM-driven:
+#   batch_size 6 -> 1, max_bucket_reso 1536 -> 1280, bucket_reso_steps 64 -> 32,
+#   num_repeats 10 -> 4 (batch 1 makes each epoch 6x longer in steps).
+# Keep resolution 1024: branch A's impasto texture needs it. If OOM, lower
+# resolution in the launch script (896 -> 768), NEVER upscale low-res sources.
+
+[general]
+shuffle_caption = false
+caption_extension = ".txt"
+keep_tokens = 1          # protects the leading trigger token mdtr_style
+
+[[datasets]]
+resolution = 1024
+batch_size = 1
+enable_bucket = true
+min_bucket_reso = 768
+max_bucket_reso = 1280
+bucket_reso_steps = 32
+bucket_no_upscale = true
+
+  [[datasets.subsets]]
+  image_dir = "dataset/train/10_mdtr"
+  num_repeats = 4
+
+  # Optional regularization images (ablation). Keep captions free of the
+  # trigger word and palette sublabels if you enable this.
+  # [[datasets.subsets]]
+  # image_dir = "dataset/train/1_reg"
+  # num_repeats = 1
+  # is_reg = true
